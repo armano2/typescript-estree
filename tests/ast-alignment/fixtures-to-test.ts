@@ -18,6 +18,7 @@ interface FixturePatternConfig {
 
 interface CreateFixturePatternConfig {
   ignore?: string[];
+  ignoreEspree?: string[];
   fileType?: string;
   ignoreSourceType?: string[];
 }
@@ -25,7 +26,8 @@ interface CreateFixturePatternConfig {
 const fixturesDirPath = path.join(__dirname, '../fixtures');
 
 class FixturesTester {
-  protected fixtures: FixturePatternConfig[] = [];
+  protected babelFixtures: FixturePatternConfig[] = [];
+  protected espreeFixtures: FixturePatternConfig[] = [];
 
   constructor() {}
 
@@ -50,9 +52,20 @@ class FixturesTester {
     }
 
     const ignore = config.ignore || [];
+    const ignoreEspree = config.ignoreEspree || [];
     const fileType = config.fileType || 'js';
     const ignoreSourceType = config.ignoreSourceType || [];
     const jsx = fileType === 'js' || fileType === 'jsx' || fileType === 'tsx';
+
+    if (fileType === 'js' || fileType === 'jsx') {
+      this.espreeFixtures.push({
+        pattern: `${fixturesSubPath}/!(${ignoreEspree.join(
+          '|'
+        )}).src.${fileType}`,
+        ignoreSourceType: false,
+        jsx
+      });
+    }
 
     /**
      * The TypeScript compiler gives us the "externalModuleIndicator" to allow typescript-estree do dynamically detect the "sourceType".
@@ -63,7 +76,7 @@ class FixturesTester {
     if (ignoreSourceType.length) {
       ignore.push(...ignoreSourceType);
       for (const fixture of ignoreSourceType) {
-        this.fixtures.push({
+        this.babelFixtures.push({
           // It needs to be the full path from within fixtures/ for the pattern
           pattern: `${fixturesSubPath}/${fixture}.src.${fileType}`,
           ignoreSourceType: true,
@@ -72,15 +85,15 @@ class FixturesTester {
       }
     }
 
-    this.fixtures.push({
+    this.babelFixtures.push({
       pattern: `${fixturesSubPath}/!(${ignore.join('|')}).src.${fileType}`,
       ignoreSourceType: false,
       jsx
     });
   }
 
-  public getFixtures(): Fixture[] {
-    return this.fixtures
+  protected processFixtures(fixtures: FixturePatternConfig[]): Fixture[] {
+    return fixtures
       .map(fixture =>
         glob
           .sync(`${fixturesDirPath}/${fixture.pattern}`, {})
@@ -91,6 +104,14 @@ class FixturesTester {
           }))
       )
       .reduce((acc, x) => acc.concat(x), []);
+  }
+
+  public getForBabel(): Fixture[] {
+    return this.processFixtures(this.babelFixtures);
+  }
+
+  public getForEspree(): Fixture[] {
+    return this.processFixtures(this.espreeFixtures);
   }
 }
 
@@ -262,7 +283,16 @@ tester.addFixturePatternConfig('javascript/unicodeCodePointEscapes');
 /* ================================================== */
 
 tester.addFixturePatternConfig('jsx', {
-  ignore: jsxFilesWithKnownIssues
+  ignore: jsxFilesWithKnownIssues,
+  ignoreEspree: jsxFilesWithKnownIssues.concat([
+    /**
+     * TSEP: missing fields
+     * attributes: Array [],
+     * selfClosing: false,
+     */
+    'shorthand-fragment-with-child',
+    'shorthand-fragment'
+  ])
 });
 tester.addFixturePatternConfig('jsx-useJSXTextNode');
 
@@ -455,6 +485,7 @@ tester.addFixturePatternConfig('typescript/namespaces-and-modules', {
   ]
 });
 
-const fixturesToTest = tester.getFixtures();
+const fixturesToTest = tester.getForBabel();
+const fixturesToTestEspree = tester.getForEspree();
 
-export { fixturesToTest };
+export { fixturesToTest, fixturesToTestEspree };

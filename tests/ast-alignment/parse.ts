@@ -1,3 +1,4 @@
+/// <reference path="./espree.d.ts" />
 import codeFrame from 'babel-code-frame';
 import * as parser from '../../src/parser';
 import * as parseUtils from './utils';
@@ -36,6 +37,22 @@ function parseWithBabelParser(text: string, jsx: boolean = true) {
     allowReturnOutsideFunction: true,
     ranges: true,
     plugins
+  });
+}
+
+function parseWithEspreeParser(text: string, jsx: boolean = true) {
+  const espree = require('espree');
+  return espree.parse(text, {
+    loc: true,
+    range: true,
+    tokens: false,
+    comment: false,
+    ecmaVersion: 10,
+    ecmaFeatures: {
+      jsx: jsx,
+      globalReturn: true,
+      impliedStrict: true
+    }
   });
 }
 
@@ -90,9 +107,14 @@ export function parse(text: string, opts: ASTComparisonParseOptions) {
           parseWithBabelParser(text, opts.jsx)
         );
         break;
+      case 'espree':
+        result.ast = parseUtils.normalizeNodeTypes(
+          parseWithEspreeParser(text, opts.jsx)
+        );
+        break;
       default:
         throw new Error(
-          'Please provide a valid parser: either "typescript-estree" or "@babel/parser"'
+          'Please provide a valid parser: either "typescript-estree", "@babel/parser" or "espree"'
         );
     }
   } catch (error) {

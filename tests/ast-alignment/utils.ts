@@ -74,6 +74,25 @@ const always = () => true;
 const ifNumber = (val: any) => typeof val === 'number';
 
 /**
+ * @param {Object} ast raw espree AST
+ * @returns {Object} processed espree AST
+ */
+export function preprocessEspreeAST(ast: any): any {
+  return omitDeep(ast, [
+    {
+      key: 'start',
+      // only remove the "start" number (not the "start" object within loc)
+      predicate: ifNumber
+    },
+    {
+      key: 'end',
+      // only remove the "end" number (not the "end" object within loc)
+      predicate: ifNumber
+    }
+  ]);
+}
+
+/**
  * - Babylon wraps the "Program" node in an extra "File" node, normalize this for simplicity for now...
  * - Remove "start" and "end" values from Babylon nodes to reduce unimportant noise in diffs ("loc" data will still be in
  * each final AST and compared).
