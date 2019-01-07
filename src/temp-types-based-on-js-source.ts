@@ -4,12 +4,12 @@
  * They will be gradually replaced with the more accurate types derived from the ESTree spec, and its
  * applicable extensions
  */
-import { AST_NODE_TYPES } from './ast-node-types';
+import { Comment, SourceLocation } from 'estree';
 
 export interface ESTreeToken {
   type: AST_NODE_TYPES;
   range: [number, number];
-  loc: ESTreeNodeLoc;
+  loc: SourceLocation;
   value: string;
   regex?: {
     pattern: string;
@@ -18,52 +18,6 @@ export interface ESTreeToken {
   object?: any;
   property?: any;
   name?: any;
-}
-
-export interface ESTreeNode {
-  type: AST_NODE_TYPES;
-  range: [number, number];
-  loc: ESTreeNodeLoc;
-  declaration?: ESTreeNode;
-  specifiers?: (ESTreeNode | null)[];
-  source?: any;
-  typeAnnotation?: ESTreeNode | null;
-  typeParameters?: ESTreeNode | null;
-  id?: ESTreeNode | null;
-  expression?: ESTreeNode | null;
-  decorators?: (ESTreeNode | null)[];
-  const?: boolean;
-  declare?: boolean;
-  global?: boolean;
-  modifiers?: any;
-  body?: any;
-  params?: any;
-  accessibility?: 'public' | 'protected' | 'private';
-  readonly?: boolean;
-  static?: boolean;
-  export?: boolean;
-  parameter?: any;
-  abstract?: boolean;
-  typeName?: ESTreeNode | null;
-  directive?: string;
-  returnType?: ESTreeNode;
-}
-
-export interface ESTreeComment {
-  type: 'Block' | 'Line';
-  range?: [number, number];
-  loc?: ESTreeNodeLoc;
-  value: string;
-}
-
-export interface LineAndColumnData {
-  line: number;
-  column: number;
-}
-
-export interface ESTreeNodeLoc {
-  start: LineAndColumnData;
-  end: LineAndColumnData;
 }
 
 export interface Extra {
@@ -75,7 +29,7 @@ export interface Extra {
   code: string;
   range: boolean;
   loc: boolean;
-  comments: ESTreeComment[];
+  comments: Comment[];
   strict: boolean;
   jsx: boolean;
   log: Function;

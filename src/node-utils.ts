@@ -6,12 +6,16 @@
  */
 import ts from 'typescript';
 import unescape from 'lodash.unescape';
+import { ESTreeToken } from './temp-types-based-on-js-source';
 import {
-  ESTreeNodeLoc,
-  ESTreeNode,
-  ESTreeToken
-} from './temp-types-based-on-js-source';
-import { TSNode } from './ts-nodes';
+  BinaryOperator,
+  SourceLocation,
+  UnaryOperator,
+  LogicalOperator,
+  AssignmentOperator,
+  UpdateOperator
+} from 'estree';
+import { ESNode } from './es-nodes';
 import { AST_NODE_TYPES } from './ast-node-types';
 
 const SyntaxKind = ts.SyntaxKind;
@@ -276,13 +280,13 @@ function getBinaryExpressionType(
  * @param  {number} start start data
  * @param  {number} end   end data
  * @param  {ts.SourceFile} ast   the AST object
- * @returns {ESTreeNodeLoc}       the loc data
+ * @returns {SourceLocation}       the loc data
  */
 function getLocFor(
   start: number,
   end: number,
   ast: ts.SourceFile
-): ESTreeNodeLoc {
+): SourceLocation {
   const startLoc = ast.getLineAndCharacterOfPosition(start),
     endLoc = ast.getLineAndCharacterOfPosition(end);
 
@@ -331,9 +335,9 @@ function canContainDirective(node: ts.Node): boolean {
  * for the given AST
  * @param  {ts.Node} nodeOrToken the ts.Node or ts.Token
  * @param  {ts.SourceFile} ast         the AST object
- * @returns {ESTreeLoc}             the loc data
+ * @returns {SourceLocation}             the loc data
  */
-function getLoc(nodeOrToken: ts.Node, ast: ts.SourceFile): ESTreeNodeLoc {
+function getLoc(nodeOrToken: ts.Node, ast: ts.SourceFile): SourceLocation {
   return getLocFor(nodeOrToken.getStart(ast), nodeOrToken.end, ast);
 }
 
@@ -548,15 +552,15 @@ function isOptional(node: { questionToken?: ts.QuestionToken }): boolean {
 /**
  * Fixes the exports of the given ts.Node
  * @param  {ts.Node} node   the ts.Node
- * @param  {ESTreeNode} result result
+ * @param  {ESNode} result result
  * @param  {ts.SourceFile} ast    the AST
  * @returns {ESTreeNode}        the ESTreeNode with fixed exports
  */
-function fixExports(
+function fixExports<T extends ESNode>(
   node: ts.Node,
-  result: ESTreeNode,
+  result: T,
   ast: ts.SourceFile
-): ESTreeNode {
+): T {
   // check for exports
   if (node.modifiers && node.modifiers[0].kind === SyntaxKind.ExportKeyword) {
     const exportKeyword = node.modifiers[0],
